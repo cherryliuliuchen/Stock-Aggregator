@@ -9,7 +9,7 @@
 
 ## Table of Contents
 - [Features](#features)
-- [Requirement documents](#Requirement documents)
+- [Requirement documents](#requirement-documents)
   - [External APIs](#external-apis)
   - [Requirements](#requirements)
 - [API Endpoints](#api-endpoints)
@@ -29,9 +29,6 @@
   - `percentageToday` / `currentPrice`
   - `Description` (from `OVERVIEW`)
   - `Last Month Closing Price` (from `TIME_SERIES_MONTHLY`)
-- Graceful fallbacks when data is missing:
-  - Description → `"Please check description in the official website"`
-  - Last Month Close → `"Please check Last Months Closing Price in the official website"`
 - Lightweight Node.js + Express. **No DB**, secrets via `.env`.
 
 ---
@@ -67,7 +64,10 @@
    - Extract the `Description` field.
 
 
-![alt text](./assets/Process.png)
+4. **Data Processing Logic**
+
+
+<img src="./assets/Process.png" alt="Process" width="200" height="300"/>
 
 ---
 
@@ -96,6 +96,7 @@ npm install
 Create .env in the project root:
 PORT=3000
 ALPHA_VANTAGE_KEY=your-alpha-vantage-key
+```
 
 
 ## Usage
