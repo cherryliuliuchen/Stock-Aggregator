@@ -1,4 +1,4 @@
-# Top Stocks Today 
+# Stockmarket at a Glance- highs and lows 
 
 [![Node.js Version](https://img.shields.io/badge/node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
 
