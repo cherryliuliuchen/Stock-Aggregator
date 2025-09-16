@@ -11,7 +11,7 @@ import { pickLastMonthCloseDate } from '../utils/parseDate.js';
 const FALLBACK_DESC = "Please check description in the official website";
 const FALLBACK_LMCP = "Please check Last Months Closing Price in the official website";
 
-// ---- raw endpoint: /api/stocks/market-movers (kept for debugging)
+// Raw endpoint: /api/stocks/market-movers (kept for debugging)
 export async function getTopMovers(_req, res) {
   try {
     const data = await fetchTopGainersLosers();
@@ -33,7 +33,7 @@ export async function getTopMovers(_req, res) {
   }
 }
 
-// ---- aggregated endpoint: /api/stocks/market-movers/aggregate
+// Aggregated endpoint: /api/stocks/market-movers/aggregate
 // Returns nested dailyReport with only the required fields.
 export async function getTopMoversAggregated(_req, res) {
   try {
@@ -52,11 +52,11 @@ export async function getTopMoversAggregated(_req, res) {
       const currentPrice = Number.isFinite(parseFloat(stock.price)) ? parseFloat(stock.price) : stock.price;
       const percentage = stock.change_percentage;
 
-      // 2) Overview for Description (with fallback)
+      // 2) Overview for Description 
       const ov = await fetchOverview(symbol).catch(() => ({}));
       const description = (ov?.Description && ov.Description.trim()) ? ov.Description : FALLBACK_DESC;
 
-      // 3) Monthly series -> last month's final trading day's close (with fallback)
+      // 3) Monthly series -> last month's final trading day's close 
       const monthly = await fetchMonthlySeries(symbol).catch(() => null);
       let lastMonthClose = null;
 
@@ -81,7 +81,7 @@ export async function getTopMoversAggregated(_req, res) {
         };
       } else {
         return {
-          "Top Looser of the Day": symbol, // spelling per requirement
+          "Top Looser of the Day": symbol,
           "Description": description,
           "Percentage Loss Today": percentage,
           "Current Price": currentPrice,

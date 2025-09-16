@@ -3,10 +3,10 @@ import { getTopMoversAggregated, getTopMovers } from '../controllers/stockContro
 
 const router = Router();
 
-// Optional raw endpoint (kept for debugging)
+// Optional raw endpoint 
 router.get('/market-movers', getTopMovers);
 
-// Final required payload (strict fields only, nested under dailyReport)
+// Final endpoint
 router.get('/market-movers/aggregate', getTopMoversAggregated);
 
 export default router;

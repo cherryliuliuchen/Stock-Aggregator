@@ -1,10 +1,9 @@
-// Service: talk to Alpha Vantage (three endpoints)
 import axios from 'axios';
 
 const BASE = 'https://www.alphavantage.co/query';
 const API_KEY = process.env.ALPHA_VANTAGE_KEY;
 
-// Detect upstream rate-limit/info notes
+// Detect upstream rate-limit and info notes
 function hasLimitNote(data) {
   return data?.Note || data?.Information;
 }
@@ -42,7 +41,7 @@ export async function fetchTopGainersLosers() {
   };
 }
 
-// 2) OVERVIEW (for Description)
+// 2) OVERVIEW (Description)
 export async function fetchOverview(symbol) {
   const data = await callAlphaVantage({ function: 'OVERVIEW', symbol });
   if (!data || !data.Symbol) {
@@ -50,10 +49,10 @@ export async function fetchOverview(symbol) {
     e.status = 404;
     throw e;
   }
-  return data; // includes "Description"
+  return data; 
 }
 
-// 3) TIME_SERIES_MONTHLY (full series; controller picks last month close)
+// 3) TIME_SERIES_MONTHLY (last month close)
 export async function fetchMonthlySeries(symbol) {
   const data = await callAlphaVantage({ function: 'TIME_SERIES_MONTHLY', symbol });
   const series = data?.['Monthly Time Series'];

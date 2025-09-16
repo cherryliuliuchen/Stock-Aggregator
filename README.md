@@ -150,6 +150,31 @@ ALPHA_VANTAGE_KEY=your-alpha-vantage-key
     npm run dev
     ```
 
+## How to Test
+
+You can test the API in two ways:
+
+### 1. Using Postman
+- Example Postman screenshot:
+
+<p align="center">
+<img src="./assets/Postman.jpg" alt="Process" width="500" height="400"/>
+</p>
+
+### 2. Using Unit Tests
+- Run the test suite from the command line:
+```bash
+npm test
+```
+<p align="center">
+<img src="./assets/test.jpg" alt="Process" width="1200" height="400"/>
+</p>
+
+
+
+
+
+
 ## Contact
 If you have any questions or feedback, feel free to contact me:
 

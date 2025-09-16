@@ -7,13 +7,15 @@ dotenv.config(); // load .env
 const app = express();
 app.use(express.json());
 
-// health check
 app.get('/', (_req, res) => res.json({ ok: true }));
 
-// stock routes
 app.use('/api/stocks', stockRouter);
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+export default app;
