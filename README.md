@@ -135,7 +135,6 @@ ALPHA_VANTAGE_KEY=your-alpha-vantage-key
 1. Create a .env file in the root directory and configure the environment variables:
     ```bash
     PORT=3000
-    DATABASE_URL=your-database-url
     JWT_SECRET=your-jwt-secret
     ```
 
