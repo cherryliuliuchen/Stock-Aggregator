@@ -1,81 +1,66 @@
-// Service: talk to Alpha Vantage
+// Service: talk to Alpha Vantage (three endpoints)
 import axios from 'axios';
 
 const BASE = 'https://www.alphavantage.co/query';
 const API_KEY = process.env.ALPHA_VANTAGE_KEY;
 
-// Detect rate limit or missing info
+// Detect upstream rate-limit/info notes
 function hasLimitNote(data) {
   return data?.Note || data?.Information;
 }
 
-// Step1: TOP_GAINERS_LOSERS
-export async function fetchTopGainersLosers() {
-  const params = new URLSearchParams({
-    function: 'TOP_GAINERS_LOSERS',
-    apikey: API_KEY
-  });
-
-  const url = `${BASE}?${params.toString()}`;
+// Generic fetcher
+async function callAlphaVantage(params) {
+  const url = `${BASE}?${new URLSearchParams({ ...params, apikey: API_KEY }).toString()}`;
   const { data } = await axios.get(url, { timeout: 15000 });
 
-  if (!data || hasLimitNote(data)) {
-    const e = new Error(data?.Note || data?.Information || 'Rate limit');
+  if (!data) {
+    const e = new Error('Empty response from upstream');
+    e.status = 502;
+    throw e;
+  }
+  if (hasLimitNote(data)) {
+    const e = new Error(data.Note || data.Information || 'Rate limit from upstream');
     e.status = 429;
     throw e;
   }
-
-  return {
-    metadata: data.metadata,
-    last_updated: data.last_updated,
-    top_gainers: data.top_gainers,
-    top_losers: data.top_losers,
-    most_actively_traded: data.most_actively_traded
-  };
-}
-
-// 2. OVERVIEW
-export async function fetchOverview(symbol) {
-  const params = new URLSearchParams({
-    function: 'OVERVIEW',
-    symbol,
-    apikey: API_KEY
-  });
-
-  const url = `${BASE}?${params.toString()}`;
-  const { data } = await axios.get(url, { timeout: 15000 });
-
-  if (!data || hasLimitNote(data) || !data.Description) {
-    throw new Error(`No overview for ${symbol}`);
-  }
-
   return data;
 }
 
-// 3. TIME_SERIES_MONTHLY
-export async function fetchMonthly(symbol) {
-  const params = new URLSearchParams({
-    function: 'TIME_SERIES_MONTHLY',
-    symbol,
-    apikey: API_KEY
-  });
-
-  const url = `${BASE}?${params.toString()}`;
-  const { data } = await axios.get(url, { timeout: 15000 });
-
-  if (!data || hasLimitNote(data)) {
-    throw new Error(`No monthly data for ${symbol}`);
+// 1) TOP_GAINERS_LOSERS
+export async function fetchTopGainersLosers() {
+  const data = await callAlphaVantage({ function: 'TOP_GAINERS_LOSERS' });
+  if (!data.top_gainers || !data.top_losers) {
+    const e = new Error('No movers data from upstream');
+    e.status = 404;
+    throw e;
   }
+  return {
+    last_updated: data.last_updated,
+    top_gainers: data.top_gainers,
+    top_losers: data.top_losers
+  };
+}
 
-  const monthly = data['Monthly Time Series'];
-  if (!monthly) {
-    throw new Error(`No monthly time series for ${symbol}`);
+// 2) OVERVIEW (for Description)
+export async function fetchOverview(symbol) {
+  const data = await callAlphaVantage({ function: 'OVERVIEW', symbol });
+  if (!data || !data.Symbol) {
+    const e = new Error(`No overview for ${symbol}`);
+    e.status = 404;
+    throw e;
   }
+  return data; // includes "Description"
+}
 
-  // Get keys sorted, pick the second latest (last month)
-  const dates = Object.keys(monthly).sort().reverse();
-  const lastMonth = dates[1]; // [0] = current month, [1] = last month
-  const lastClose = lastMonth ? monthly[lastMonth]['4. close'] : null;
-
-  return { lastMonth, lastClose };
+// 3) TIME_SERIES_MONTHLY (full series; controller picks last month close)
+export async function fetchMonthlySeries(symbol) {
+  const data = await callAlphaVantage({ function: 'TIME_SERIES_MONTHLY', symbol });
+  const series = data?.['Monthly Time Series'];
+  if (!series) {
+    const e = new Error(`No monthly series for ${symbol}`);
+    e.status = 404;
+    throw e;
+  }
+  return series; // { 'YYYY-MM-DD': { '1. open', '2. high', '3. low', '4. close', '5. volume' }, ... }
 }

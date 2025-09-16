@@ -3,14 +3,15 @@
 import {
   fetchTopGainersLosers,
   fetchOverview,
-  fetchMonthly
+  fetchMonthlySeries
 } from '../services/alphaService.js';
+import { pickLastMonthCloseDate } from '../utils/parseDate.js';
 
-// Simple fallback messages
+// Fallback messages required by spec
 const FALLBACK_DESC = "Please check description in the official website";
 const FALLBACK_LMCP = "Please check Last Months Closing Price in the official website";
 
-// Raw endpoint: /api/stocks/market-movers
+// ---- raw endpoint: /api/stocks/market-movers (kept for debugging)
 export async function getTopMovers(_req, res) {
   try {
     const data = await fetchTopGainersLosers();
@@ -32,10 +33,11 @@ export async function getTopMovers(_req, res) {
   }
 }
 
-// Aggregated endpoint: /api/stocks/market-movers/aggregate
+// ---- aggregated endpoint: /api/stocks/market-movers/aggregate
+// Returns nested dailyReport with only the required fields.
 export async function getTopMoversAggregated(_req, res) {
   try {
-    // Step1: get the top mover tickers and today % and current price
+    // 1) Get today's top gainers/losers
     const movers = await fetchTopGainersLosers();
     const g = movers.top_gainers?.[0];
     const l = movers.top_losers?.[0];
@@ -44,43 +46,60 @@ export async function getTopMoversAggregated(_req, res) {
       return res.status(404).json({ error: 'No movers found' });
     }
 
-    // Step2: fetch Overview (may fail for tickers not covered), use fallback on error
-    const gOv = await fetchOverview(g.ticker).catch(() => ({}));
-    const lOv = await fetchOverview(l.ticker).catch(() => ({}));
+    // Helper to build one side (gainer or loser)
+    async function buildSide(stock, isGainer) {
+      const symbol = stock.ticker;
+      const currentPrice = Number.isFinite(parseFloat(stock.price)) ? parseFloat(stock.price) : stock.price;
+      const percentage = stock.change_percentage;
 
-    // Step3: fetch Monthly last-month close (may fail), use fallback on error
-    const gMonthly = await fetchMonthly(g.ticker).catch(() => ({ lastMonth: null, lastClose: null }));
-    const lMonthly = await fetchMonthly(l.ticker).catch(() => ({ lastMonth: null, lastClose: null }));
+      // 2) Overview for Description (with fallback)
+      const ov = await fetchOverview(symbol).catch(() => ({}));
+      const description = (ov?.Description && ov.Description.trim()) ? ov.Description : FALLBACK_DESC;
 
-    // Step4:  build final payload with safe defaults
-    const payload = {
-      topGainer: {
-        label: 'Top Gainer of the Day',
-        symbol: g.ticker,
-        description: (gOv?.Description && gOv.Description.trim()) ? gOv.Description : FALLBACK_DESC,
-        percentageToday: g.change_percentage,           // e.g. "208.75%"
-        currentPrice: parseFloat(g.price),              // from TOP_GAINERS_LOSERS
-        lastMonthClosingPrice: (gMonthly.lastClose && String(gMonthly.lastClose).trim())
-          ? parseFloat(gMonthly.lastClose)
-          : FALLBACK_LMCP,
-        lastMonthClosingDate: gMonthly.lastMonth || null
-      },
-      topLoser: {
-        label: 'Top Loser of the Day',
-        symbol: l.ticker,
-        description: (lOv?.Description && lOv.Description.trim()) ? lOv.Description : FALLBACK_DESC,
-        percentageToday: l.change_percentage,           // negative percent like "-57.40%"
-        currentPrice: parseFloat(l.price),
-        lastMonthClosingPrice: (lMonthly.lastClose && String(lMonthly.lastClose).trim())
-          ? parseFloat(lMonthly.lastClose)
-          : FALLBACK_LMCP,
-        lastMonthClosingDate: lMonthly.lastMonth || null
-      },
-      last_updated: movers.last_updated,
-      source: 'Alpha Vantage (TOP_GAINERS_LOSERS, OVERVIEW, TIME_SERIES_MONTHLY)'
-    };
+      // 3) Monthly series -> last month's final trading day's close (with fallback)
+      const monthly = await fetchMonthlySeries(symbol).catch(() => null);
+      let lastMonthClose = null;
 
-    return res.json(payload);
+      if (monthly) {
+        const keys = Object.keys(monthly);
+        const lmKey = pickLastMonthCloseDate(keys);
+        if (lmKey && monthly[lmKey]?.['4. close'] != null) {
+          const val = monthly[lmKey]['4. close'];
+          lastMonthClose = Number.isFinite(parseFloat(val)) ? parseFloat(val) : val;
+        }
+      }
+      if (lastMonthClose == null) lastMonthClose = FALLBACK_LMCP;
+
+      // 4) Shape exactly as required
+      if (isGainer) {
+        return {
+          "Top Gainer of the Day": symbol,
+          "Description": description,
+          "Percentage Gain Today": percentage,
+          "Current Price": currentPrice,
+          "Last Months Closing Price": lastMonthClose
+        };
+      } else {
+        return {
+          "Top Looser of the Day": symbol, // spelling per requirement
+          "Description": description,
+          "Percentage Loss Today": percentage,
+          "Current Price": currentPrice,
+          "Last Months Closing Price": lastMonthClose
+        };
+      }
+    }
+
+    const gainerObj = await buildSide(g, true);
+    const loserObj  = await buildSide(l, false);
+
+    // 5) Final nested payload
+    return res.json({
+      dailyReport: {
+        "Top Gainer of the Day": gainerObj,
+        "Top Looser of the Day": loserObj
+      }
+    });
   } catch (err) {
     console.error(err?.message || err);
     const status = err.status || 500;

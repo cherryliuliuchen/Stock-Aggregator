@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { getTopMovers, getTopMoversAggregated } from '../controllers/stockController.js';
+import { getTopMoversAggregated, getTopMovers } from '../controllers/stockController.js';
 
 const router = Router();
 
-// Step 1: raw movers only (already working)
+// Optional raw endpoint (kept for debugging)
 router.get('/market-movers', getTopMovers);
 
-// Step 2: aggregated result (three APIs combined)
+// Final required payload (strict fields only, nested under dailyReport)
 router.get('/market-movers/aggregate', getTopMoversAggregated);
 
 export default router;
