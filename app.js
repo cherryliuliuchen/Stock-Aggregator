@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import stockRouter from './routes/stockRoutes.js';
 
-dotenv.config(); // load .env
+dotenv.config(); 
 
 const app = express();
 app.use(express.json());

@@ -1,5 +1,3 @@
-// Controller: orchestrate service calls and shape final response
-
 import {
   fetchTopGainersLosers,
   fetchOverview,
@@ -11,7 +9,6 @@ import { pickLastMonthCloseDate } from '../utils/parseDate.js';
 const FALLBACK_DESC = "Please check description in the official website";
 const FALLBACK_LMCP = "Please check Last Months Closing Price in the official website";
 
-// Raw endpoint: /api/stocks/market-movers (kept for debugging)
 export async function getTopMovers(_req, res) {
   try {
     const data = await fetchTopGainersLosers();
@@ -33,8 +30,7 @@ export async function getTopMovers(_req, res) {
   }
 }
 
-// Aggregated endpoint: /api/stocks/market-movers/aggregate
-// Returns nested dailyReport with only the required fields.
+// Returns nested dailyReport.
 export async function getTopMoversAggregated(_req, res) {
   try {
     // 1) Get today's top gainers/losers
