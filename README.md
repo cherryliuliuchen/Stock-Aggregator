@@ -19,6 +19,7 @@
 - [API Endpoints](#api-endpoints)
 - [Installation](#installation)
 - [Usage](#usage)
+- [How to Test](#How-to-Test)
 - [Sample Responses](#sample-responses)
 - [Project Structure](#project-structure)
 - [Notes](#notes)
@@ -134,8 +135,8 @@ ALPHA_VANTAGE_KEY=your-alpha-vantage-key
 
 1. Create a .env file in the root directory and configure the environment variables:
     ```bash
+    ALPHA_VANTAGE_KEY=your-apikey
     PORT=3000
-    JWT_SECRET=your-jwt-secret
     ```
 
 2. Start the server:
